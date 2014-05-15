@@ -1,0 +1,54 @@
+CROSS_HOST="aarch64-unknown-linux-gnu"
+inherit cross
+
+NAME="linux-aarch64-zlib"
+VERSION=1.2.8
+RELEASE=1
+CATEGORY="Devel"
+SUMMARY="zlib for Linux aarch64 toolchain"
+DESCRPITION="This package does NOT contain cygwin binaries.
+Instead, it contains Linux ARM binaries.  It is for use with the
+linux-aarch64-gcc cross compiler, and installs into the
+/usr/aarch64-unknown-linux-gnu/sys-root/usr/{lib,include} directories."
+HOMEPAGE="http://www.zlib.net/"
+SRC_URI="mirror://sourceforge/libpng/zlib-${VERSION}.tar.gz"
+SRC_DIR="zlib-${VERSION}"
+
+PKG_NAMES="${NAME} ${NAME/zlib/minizip}"
+linux_aarch64_zlib_CONTENTS="${CROSS_INCLUDEDIR#/}/z*.h ${CROSS_LIBDIR#/}/libz.*
+                              ${CROSS_LIBDIR#/}/pkgconfig/zlib.pc usr/share/doc/${PN}/"
+linux_aarch64_minizip_SUMMARY=${SUMMARY/zlib/minizip}
+linux_aarch64_minizip_CONTENTS="${CROSS_INCLUDEDIR#/}/minizip/ ${CROSS_LIBDIR#/}/libminizip.*
+                                 ${CROSS_LIBDIR#/}/pkgconfig/minizip.pc usr/share/doc/${PN/zlib/minizip}/"
+
+DISTCLEANFILES="contrib/minizip/Makefile"
+
+src_compile() {
+	cd ${S}/contrib/minizip
+	cygautoreconf
+	lndirs
+
+	cd ${B}
+	rm -f Makefile
+	CHOST=${CROSS_HOST} ./configure --prefix=${CROSS_PREFIX}
+	cygmake
+
+	cd ${B}/contrib/minizip
+	cygconf
+	cygmake
+}
+
+src_install() {
+	cd ${B}
+	cyginstall
+	cd ${B}/contrib/minizip
+	cyginstall
+
+	docinto /${PN/zlib/minizip}
+	dodoc ${S}/contrib/minizip/*.txt
+
+	# already provided by native zlib
+	rm -fr ${D}${CROSS_DATADIR}/man
+}
+
+KEEP_LA_FILES="none"
